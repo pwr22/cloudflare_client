@@ -4,7 +4,8 @@ import requests
 
 CF_URL = 'https://www.cloudflare.com/api_json.html'
 
-class Client:
+# Specify object explicitly for Python 2 support
+class Client (object):
     def __init__(self, email, token):
         '''Contruct a CloudFlare Client API object'''
         self.__user = email
