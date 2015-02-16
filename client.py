@@ -1,6 +1,7 @@
 # CloudFlare client API module
 
 import requests
+from upstream_error import UpstreamError
 
 CF_URL = 'https://www.cloudflare.com/api_json.html'
 
@@ -10,6 +11,17 @@ class Client (object):
         '''Contruct a CloudFlare Client API object'''
         self.__user = email
         self.__key  = token
+
+    def _makeCall(self, params):
+        '''Calls through to the CF API with params provided'''
+        # Splice in auth details, overriding existing
+        params.update({ 'email' : self.__user, 'tkn' : self.__key})
+        #TODO does requests raise on http errors?
+        res = requests.post(CF_URL, data = params).json()
+        if res['result'] == 'error':
+            # err_code could be missing
+            raise UpstreamError(res['msg'], res.get('err_code'))
+        return res
 
     def __getattr__(self, callType):
         '''Overridden to auto create methods wrapping CF API actions'''
@@ -23,11 +35,3 @@ class Client (object):
         # Accessed this way to turn into method
         # All these selfs because what if crazy inheritance?
         return type(self).__dict__[callType].__get__(self, type(self))
-
-    def _makeCall(self, params):
-        '''Calls through to the CF API with params provided'''
-        # Splice in auth details, overriding existing
-        params.update({ 'email' : self.__user, 'tkn' : self.__key})
-        res = requests.post(CF_URL, data = params).json()
-        #TODO handle errors
-        return res
